@@ -1,0 +1,81 @@
+service: User-Resume-Data
+
+frameworkVersion: ">=1.1.0 <2.36.0"
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  environment:
+    # DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    DYNAMODB_TABLE : 'User_Resume_Data'
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
+functions:
+  create:
+    handler: Resume/create.create
+    events:
+      - http:
+          path: Resume
+          method: post
+          cors: true
+
+  list:
+    handler: Resume/list.list
+    events:
+      - http:
+          path: Resume
+          method: get
+          cors: true
+
+  get:
+    handler: Resume/get.get
+    events:
+      - http:
+          path: Resume/{userid}
+          method: get
+          cors: true
+
+  update:
+    handler: Resume/update.update
+    events:
+      - http:
+          path: Resume/{userid}
+          method: put
+          cors: true
+
+  delete:
+    handler: Resume/delete.delete
+    events:
+      - http:
+          path: Resume/{userid}
+          method: delete
+          cors: true
+
+resources:
+  Resources:
+    TodosDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: userid
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: userid
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        # TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        TableName: 'User_Resume_Data'
